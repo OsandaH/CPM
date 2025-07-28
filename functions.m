@@ -129,6 +129,22 @@ function I = simpsons_2d(f, ax, bx, ay, by, nx, ny)
     I = hx * hy / 9 * sum(sum(W .* Z));
 end
 
+
+% Define the function to integrate
+f = @(x, y) x.^2 + y.^2;
+
+% Set integration bounds and subdivisions
+ax = 0; bx = 2;     % x from 0 to 2
+ay = 0; by = 2;     % y from 0 to 2
+nx = 10; ny = 10;   % Must be even
+
+% Call the function
+I = simpsons_2d(f, ax, bx, ay, by, nx, ny);
+
+% Display the result
+fprintf('Approximate integral value = %.6f\n', I);
+
+
 %%%%%% Initial Value Problem %%%%%%
 
 %% Common Derivative %%
