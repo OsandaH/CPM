@@ -321,4 +321,66 @@ wage_interp = interp2(years, service, wage, year_interp, service_interp, 'spline
 fprintf('Estimated wage in 1975 for 15 years of service: %.3f\n', wage_interp);
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%% Boundary Vlaue Problem %%%%%%%%%%%%%%%%%%%
+
+function bvp_shooting_method2()
+    % Shooting method for: y'' + 2x y' = 0, y(0) = 1, y(xf) = 0
+    % We'll solve for xf = 1.5 and xf = 3
+    fprintf('Solving for x = 1.5...\n');
+    solve_bvp(1.5);
+
+    fprintf('\nSolving for x = 3...\n');
+    solve_bvp(3);
+end
+
+function solve_bvp(xf)
+    x0 = 0; h = 0.01;
+    x = x0:h:xf;
+
+    y1_0 = 1;  % y(0)
+    g1 = -1; g2 = -5; % Initial guesses for y'(0)
+
+    y1g1 = run_rk4(x, [y1_0; g1]);
+    y1g2 = run_rk4(x, [y1_0; g2]);
+
+    tol = 1e-5;
+    while abs(y1g2(end,1)) > tol
+        g = g2 - y1g2(end,1)*(g2 - g1)/(y1g2(end,1) - y1g1(end,1));
+        g1 = g2;
+        g2 = g;
+        y1g1 = y1g2;
+        y1g2 = run_rk4(x, [y1_0; g2]);
+    end
+
+    % Final solution
+    y_final = y1g2(:,1);
+
+    plot(x, y_final, 'DisplayName', sprintf('x_f = %.1f', xf)); hold on;
+    xlabel('x'); ylabel('y(x)');
+    title('Shooting Method Solution for BVP');
+    legend show;
+    grid on;
+end
+
+function Y = run_rk4(x, y0)
+    n = length(x);
+    Y = zeros(n, 2);
+    Y(1,:) = y0';
+    h = x(2) - x(1);
+
+    for i = 1:n-1
+        k1 = ode_rhs(x(i), Y(i,:)') * h;
+        k2 = ode_rhs(x(i)+h/2, Y(i,:)' + k1/2) * h;
+        k3 = ode_rhs(x(i)+h/2, Y(i,:)' + k2/2) * h;
+        k4 = ode_rhs(x(i)+h, Y(i,:)' + k3) * h;
+        Y(i+1,:) = Y(i,:) + (k1' + 2*k2' + 2*k3' + k4')/6;
+    end
+end
+
+function dy = ode_rhs(x, y)
+    % y = [y1; y2], dy1/dx = y2, dy2/dx = -2*x*y2
+    dy = zeros(2,1);
+    dy(1) = y(2);
+    dy(2) = -2*x*y(2);
+end
+
