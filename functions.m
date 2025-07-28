@@ -93,7 +93,7 @@ I4 = simpsons_rule(f4, 2, 3, n);
 fprintf('Integral (iv): %.6f\n', I4);
 
 
-%%%%%%% Simposns 2D %%%%%%%%%%
+%%%%%%% Simpsons 2D %%%%%%%%%%
 
 function I = simpsons_2d(f, ax, bx, ay, by, nx, ny)
     % Simpson's Rule for double integrals over [ax,bx] x [ay,by]
