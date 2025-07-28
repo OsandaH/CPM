@@ -244,5 +244,63 @@ Area = (x1 - x0) * (y1 - y0);
 T_avg=sn/Area
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+clc;
+clear all;
 
+% Given function
+f = @(t, y) -2*y + t^2;
+
+% Time span
+t0 = 0; tf = 2; h = 0.2;
+t = t0:h:tf;
+n = length(t);
+
+% Initial Conditions
+y_euler = zeros(1,n); y_euler = zeros(1,n);
+y_rk2 = zeros(1,n); y_rk2 = zeros(1,n);
+
+% Set initial values
+y_euler(1) = 1; y_euler(1) = 0;
+y_rk2(1) = 1; y_rk2(1) = 0;
+
+% --- Exact Solution ---
+y_exact = 0.5*t.^2 - 0.5*t + 0.25 - 0.75*exp(-2*t);
+
+for i = 1:n-1
+    y_euler(i+1) = y_euler(i) + h * f(t(i), y_euler(i));
+end
+
+% --- RK2 (Heun's Method) ---
+for i = 1:n-1
+    k1 = f(t(i), y_rk2(i));
+    k2 = f(t(i) + h, y_rk2(i) + h*k1);
+    y_rk2(i+1) = y_rk2(i) + (h/2)*(k1 + k2);
+end
+% --- Display results ---
+fprintf('   t       Euler      RK2        Exact      Error(Euler)   Error(RK2)\n');
+for i = 1:n
+    fprintf('%.1f   %.6f   %.6f   %.6f   %.6e   %.6e\n', ...
+        t(i), y_euler(i), y_rk2(i), y_exact(i), ...
+        abs(y_exact(i) - y_euler(i)), abs(y_exact(i) - y_rk2(i)));
+end
+
+% --- Plot results ---
+figure;
+plot(t, y_exact, 'k-', 'LineWidth', 2); hold on;
+plot(t, y_euler, 'ro--', 'LineWidth', 1.5);
+plot(t, y_rk2, 'bs-.', 'LineWidth', 1.5);
+legend('Exact', 'Euler', 'RK2', 'Location', 'Best');
+xlabel('t'); ylabel('y(t)');
+title('Comparison of Euler and RK2 with Exact Solution');
+grid on;
+
+% --- Error Plot ---
+figure;
+plot(t, abs(y_exact - y_euler), 'r--o', 'LineWidth', 1.5); hold on;
+plot(t, abs(y_exact - y_rk2), 'b-.s', 'LineWidth', 1.5);
+legend('Euler Error', 'RK2 Error');
+xlabel('t'); ylabel('Absolute Error');
+title('Error Comparison');
+grid on;
