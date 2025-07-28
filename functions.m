@@ -135,7 +135,7 @@ end
 function dy = ode_system(t, y)
     dy = zeros(2,1);
     dy(1) = y(2);                     % dy1/dt = y2
-    dy(2) = -4*y(2) - 2*y(1) + 2;     % dy2/dt = -4y2 - 2y1 + 2
+    dy(2) = -2*y(2) - 4*y(1);     % dy2/dt = -2y2 - 4y1 
 end
 
 %% Euler Method %%
