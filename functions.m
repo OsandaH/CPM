@@ -53,9 +53,9 @@ fprintf('Root for function (i): Newton-Raphson = %.6f, Secant = %.6f\n', root1_N
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% approximate the integral of f from a to b
+%% approximate the integral of f from a to b %%% boundary value Problem 
 
-%%% simpsons rule
+%%%%% simpsons rule %%%%%
 
 function I = simpsons_rule(f, a, b, n)
     % Simpson's Rule to approximate the integral of f from a to b
@@ -128,3 +128,175 @@ function I = simpsons_2d(f, ax, bx, ay, by, nx, ny)
     % Simpson's 2D formula
     I = hx * hy / 9 * sum(sum(W .* Z));
 end
+
+%%%%%% Initial Value Problem %%%%%%
+
+%% Common Derivative %%
+function dy = ode_system(t, y)
+    dy = zeros(2,1);
+    dy(1) = y(2);                     % dy1/dt = y2
+    dy(2) = -4*y(2) - 2*y(1) + 2;     % dy2/dt = -4y2 - 2y1 + 2
+end
+
+%% Euler Method %%
+function [t, Y] = euler_method(f, y0, t0, tf, h)
+    t = t0:h:tf;
+    n = length(t);
+    Y = zeros(n, length(y0));
+    Y(1,:) = y0;
+    
+    for i = 1:n-1
+        Y(i+1,:) = Y(i,:) + h * f(t(i), Y(i,:)')';
+    end
+end
+
+%% RK 2 %%
+
+function [t, Y] = rk2_method(f, y0, t0, tf, h)
+    t = t0:h:tf;
+    n = length(t);
+    Y = zeros(n, length(y0));
+    Y(1,:) = y0;
+    
+    for i = 1:n-1
+        k1 = f(t(i), Y(i,:)')';
+        k2 = f(t(i)+h, Y(i,:) + h*k1)';
+        Y(i+1,:) = Y(i,:) + h/2 * (k1 + k2);
+    end
+end
+
+
+%% RK 4 %%
+
+function [t, Y] = rk4_method(f, y0, t0, tf, h)
+    t = t0:h:tf;
+    n = length(t);
+    Y = zeros(n, length(y0));
+    Y(1,:) = y0;
+    
+    for i = 1:n-1
+        k1 = f(t(i), Y(i,:)')';
+        k2 = f(t(i)+h/2, Y(i,:) + h/2*k1)';
+        k3 = f(t(i)+h/2, Y(i,:) + h/2*k2)';
+        k4 = f(t(i)+h, Y(i,:) + h*k3)';
+        Y(i+1,:) = Y(i,:) + h/6 * (k1 + 2*k2 + 2*k3 + k4);
+    end
+end
+
+% Parameters
+t0 = 0; tf = 5; h = 0.1;
+y0 = [2; 0]; % y(0) = 2, y'(0) = 0
+
+% Solve using different methods
+[t_e, Y_e] = euler_method(@ode_system, y0, t0, tf, h);
+[t_rk2, Y_rk2] = rk2_method(@ode_system, y0, t0, tf, h);
+[t_rk4, Y_rk4] = rk4_method(@ode_system, y0, t0, tf, h);
+
+% Plot
+figure;
+plot(t_e, Y_e(:,1), 'r--', t_rk2, Y_rk2(:,1), 'b-.', t_rk4, Y_rk4(:,1), 'k', 'LineWidth', 2);
+legend('Euler', 'RK2', 'RK4 (Reference)');
+xlabel('t'); ylabel('y(t)');
+title('Comparison of Euler, RK2, and RK4 Methods');
+grid on;
+
+%%%%%%%%%%%%%%% Boundary Vlaue Problem %%%%%%%%%%%%%%%%%%%
+%% (d3y/dx3) + y*d(2y/dx2) = 0 y(0) = 0 y'(0) = 0 y(inf) = 2
+
+function bvp_shooting_method()
+    % Target boundary
+    x0 = 0; xf = 10; h = 0.01;
+    x = x0:h:xf;
+    
+    % Initial conditions: y1 = y, y2 = y', y3 = y''
+    y1_0 = 0; y2_0 = 0;
+
+    % Try initial guesses for y3(0)
+    g1 = 0; g2 = 5;  % two guesses for y3(0)
+    
+    % Solve for both guesses
+    y1g1 = run_rk3(x, [y1_0; y2_0; g1]);
+    y1g2 = run_rk3(x, [y1_0; y2_0; g2]);
+
+    % Secant method to refine guess
+    tol = 1e-4;
+    while abs(y1g2(end,2) - 2) > tol
+        g = g2 - (y1g2(end,2) - 2) * (g2 - g1) / (y1g2(end,2) - y1g1(end,2));
+        g1 = g2; g2 = g;
+        y1g1 = y1g2;
+        y1g2 = run_rk3(x, [y1_0; y2_0; g2]);
+    end
+    
+    % Final solution
+    y_final = y1g2(:,1);
+    
+    % Plot
+    plot(x, y_final, 'r', 'LineWidth', 2);
+    xlabel('x'); ylabel('y(x)');
+    title('Shooting Method Solution');
+    grid on;
+end
+
+% Runge-Kutta 4th order solver for 3-variable system
+function Y = run_rk3(x, y0)
+    n = length(x);
+    Y = zeros(n, 3);
+    Y(1,:) = y0';
+
+    h = x(2) - x(1);
+
+    for i = 1:n-1
+        k1 = ode3(x(i), Y(i,:)') * h;
+        k2 = ode3(x(i)+h/2, Y(i,:)' + k1/2) * h;
+        k3 = ode3(x(i)+h/2, Y(i,:)' + k2/2) * h;
+        k4 = ode3(x(i)+h, Y(i,:)' + k3) * h;
+        Y(i+1,:) = Y(i,:) + (k1' + 2*k2' + 2*k3' + k4') / 6;
+    end
+end
+
+function dy = ode3(x, y)
+    dy = zeros(3,1);
+    dy(1) = y(2);
+    dy(2) = y(3);
+    dy(3) = -y(1)*y(3);
+end
+
+
+%%%% Interpolation %%%
+% Define g(x)
+g = @(x) sin(4*pi*x);
+
+% Interval
+a = 0; b = 1;
+
+% Define 11 equally spaced sample points (xk)
+k = 0:10;
+x = a + k * (b - a) / 10;
+y = g(x);  % Function values at x
+
+% Interpolation points
+xi = linspace(a, b, 1000);  % Fine grid for plotting and error
+
+% Interpolation using 'cubic'
+yi_cubic = interp1(x, y, xi, 'cubic');
+err_cubic = norm(abs(yi_cubic - g(xi)), 'inf');
+
+% Interpolation using 'spline'
+yi_spline = interp1(x, y, xi, 'spline');
+err_spline = norm(abs(yi_spline - g(xi)), 'inf');
+
+% Display errors
+fprintf('Max error with cubic:  %.6e\n', err_cubic);
+fprintf('Max error with spline: %.6e\n', err_spline);
+
+% Plot results
+figure;
+plot(xi, g(xi), 'k-', 'LineWidth', 1.5); hold on;
+plot(xi, yi_cubic, 'r--', 'LineWidth', 1.5);
+plot(xi, yi_spline, 'b-.', 'LineWidth', 1.5);
+legend('Original g(x)', 'Cubic Interpolation', 'Spline Interpolation');
+xlabel('x'); ylabel('y');
+title('Interpolation of g(x) = sin(4πx)');
+grid on;
+
+
