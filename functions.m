@@ -300,3 +300,25 @@ title('Interpolation of g(x) = sin(4πx)');
 grid on;
 
 
+
+%%%%%%% 
+% Given data
+years = 1950:10:1990;           % 5 columns (time)
+service = 10:10:30;             % 3 rows (years of service)
+
+wage = [150.697 199.592 187.625 179.323 195.072;   % service = 10
+        250.287 203.212 179.092 322.767 226.505;   % service = 20
+        153.706 426.730 249.633 120.281 598.243];  % service = 30
+
+% Interpolation point
+year_interp = 1975;
+service_interp = 15;
+
+% Interpolate using interp2
+wage_interp = interp2(years, service, wage, year_interp, service_interp, 'spline');
+
+% Display result
+fprintf('Estimated wage in 1975 for 15 years of service: %.3f\n', wage_interp);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
